@@ -17,7 +17,7 @@
  ************************************************************************/
 
 /*
-** File: coveragetest_fprime_app.c
+** File: coveragetest_fprime_gds.c
 **
 ** Purpose:
 ** Coverage Unit Test cases for the SAMPLE Application
