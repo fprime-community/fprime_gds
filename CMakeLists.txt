@@ -1,10 +1,8 @@
 cmake_minimum_required(VERSION 3.22)
+
 project(CFE_FPRIME_GDS C CXX)
-
-add_compile_options(-fPIC)
-set(FPRIME_INCLUDE_FRAMEWORK_CODE ON)
-find_package(FPrime REQUIRED PATHS "${CMAKE_CURRENT_LIST_DIR}/lib/fprime")
-
+set(FPRIME_PROJECT_ROOT "${PROJECT_SOURCE_DIR}")
+list(PREPEND FPRIME_BUILD_LOCATIONS "${PROJECT_SOURCE_DIR}")
 
 set(APP_SRC_FILES
   fsw/src/fprime_gds.c
@@ -21,6 +19,7 @@ else()
     fsw/src/fprime_gds_dispatch.c
   )
 endif()
+add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/GdsBridge")
 
 
 # Add table
