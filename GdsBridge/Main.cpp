@@ -4,7 +4,7 @@
 //
 // ======================================================================
 // Used to access topology functions
-#include <FPrimeDeployment/Top/FPrimeDeploymentTopology.hpp>
+#include <GdsBridge/Top/GdsBridgeTopology.hpp>
 // OSAL initialization
 #include <Os/Os.hpp>
 // Used for signal handling shutdown
@@ -14,13 +14,13 @@
 // Used for printf functions
 #include <cstdlib>
 
-FPrimeApp::TopologyState inputs;
+FprimeGds::TopologyState inputs;
 
 extern "C" {
     #include "cfe.h"
     #include "cfe_config.h"
-    #include "fprime_app_version.h"
-    #include "fprime_app_internal_cfg.h"
+    #include "fprime_gds_version.h"
+    #include "fprime_gds_internal_cfg.h"
 
     /**
      * \brief GDS bridge application entry point
@@ -45,20 +45,24 @@ CFE_Status_t FPRIME_GDS_Init();
 // Main entry point (see above)
 void FPRIME_GDS_Main(void) {
     Os::init();
-    inputs.hostname = hostname;
-    inputs.port = port_number;
+    inputs.hostname = "0.0.0.0";
+    inputs.port = 15010;
 
     uint32 run_status = CFE_ES_RunStatus_APP_RUN;
     
     // Initialize the CFS application and the F Prime setup within 
     CFE_Status_t status = FPRIME_GDS_Init();
+    if (status != CFE_SUCCESS) {
+        FprimeGds::teardownTopology(inputs);
+        CFE_ES_ExitApp(status);
+    }
 
     // Main loop to run the GDS bridge application
     while (CFE_ES_RunLoop(&run_status) == true) {
         // TODO: stroke that com driver
     }
     // Shudown, shutdown, everybody shutdown!
-    FPrimeApp::teardownTopology(inputs);
+    FprimeGds::teardownTopology(inputs);
     CFE_ES_ExitApp(run_status);
 }
 
@@ -66,7 +70,7 @@ void FPRIME_GDS_Main(void) {
 CFE_Status_t FPRIME_GDS_Init() {
     printf("Initializing FPrime GDS App...\n");
     CFE_Status_t status;
-    char         VersionString[FPRIME_APP_CFG_MAX_VERSION_STR_LEN];
+    char         VersionString[FPRIME_GDS_CFG_MAX_VERSION_STR_LEN];
 
     /*
     ** Register the events
@@ -81,8 +85,8 @@ CFE_Status_t FPRIME_GDS_Init() {
         /*
          ** Create Software Bus message pipe.
          */
-        status = CFE_SB_CreatePipe(&CommandPipe, FPRIME_APP_PLATFORM_PIPE_DEPTH,
-                                   FPRIME_APP_PLATFORM_PIPE_NAME);
+        status = CFE_SB_CreatePipe(&CommandPipe, FPRIME_GDS_PLATFORM_PIPE_DEPTH,
+                                   FPRIME_GDS_PLATFORM_PIPE_NAME);
         if (status != CFE_SUCCESS)
         {
             CFE_EVS_SendEvent(2, CFE_EVS_EventType_ERROR,
@@ -90,13 +94,13 @@ CFE_Status_t FPRIME_GDS_Init() {
         }
     }
     // Set up the topology that runs the GDS bridge application
-    FPrimeApp::setupTopology(inputs);
+    FprimeGds::setupTopology(inputs);
 
     // If setup was successful so far, then print the version message
     if (status == CFE_SUCCESS)
     {
-        CFE_Config_GetVersionString(VersionString, FPRIME_APP_CFG_MAX_VERSION_STR_LEN, "F Prime GDS App", FPRIME_GDS_VERSION,
-                                    FPRIME_APP_BUILD_CODENAME, FPRIME_APP_LAST_OFFICIAL);
+        CFE_Config_GetVersionString(VersionString, FPRIME_GDS_CFG_MAX_VERSION_STR_LEN, "F Prime GDS App", FPRIME_GDS_VERSION,
+                                    FPRIME_GDS_BUILD_CODENAME, FPRIME_GDS_LAST_OFFICIAL);
         CFE_EVS_SendEvent(1, CFE_EVS_EventType_INFORMATION, "F Prime GDS App Initialized.%s", VersionString);
     }
 

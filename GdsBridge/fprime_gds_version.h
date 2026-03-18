@@ -20,27 +20,27 @@
  *  The FPrime App header file containing version information
  */
 
-#ifndef FPRIME_APP_VERSION_H
-#define FPRIME_APP_VERSION_H
+#ifndef FPRIME_GDS_VERSION_H
+#define FPRIME_GDS_VERSION_H
 
 /* Development Build Macro Definitions */
 
-#define FPRIME_APP_BUILD_NUMBER    0
-#define FPRIME_APP_BUILD_BASELINE  "v0.1.0" /*!< Development Build: git tag that is the base for the current development */
-#define FPRIME_APP_BUILD_DEV_CYCLE "v0.1.0" /**< @brief Development: Release name for current development cycle */
-#define FPRIME_APP_BUILD_CODENAME  "Hare" /**< @brief: Development: Code name for the current build */
+#define FPRIME_GDS_BUILD_NUMBER    0
+#define FPRIME_GDS_BUILD_BASELINE  "v0.1.0" /*!< Development Build: git tag that is the base for the current development */
+#define FPRIME_GDS_BUILD_DEV_CYCLE "v0.1.0" /**< @brief Development: Release name for current development cycle */
+#define FPRIME_GDS_BUILD_CODENAME  "Hare" /**< @brief: Development: Code name for the current build */
 
 /*
  * Version Macros, see \ref cfsversions for definitions.
  */
-#define FPRIME_APP_MAJOR_VERSION 0  /*!< @brief Major version number. */
-#define FPRIME_APP_MINOR_VERSION 1  /*!< @brief Minor version number. */
-#define FPRIME_APP_REVISION      0  /*!< @brief Revision version number. Value of 0 indicates a development version.*/
+#define FPRIME_GDS_MAJOR_VERSION 0  /*!< @brief Major version number. */
+#define FPRIME_GDS_MINOR_VERSION 1  /*!< @brief Minor version number. */
+#define FPRIME_GDS_REVISION      0  /*!< @brief Revision version number. Value of 0 indicates a development version.*/
 
 /**
  * @brief Last official release.
  */
-#define FPRIME_APP_LAST_OFFICIAL "v0.0.0"
+#define FPRIME_GDS_LAST_OFFICIAL "v0.0.0"
 
 /*!
  * @brief Mission revision.
@@ -49,17 +49,17 @@
  * Values 1-254 are reserved for mission use to denote patches/customizations as needed. NOTE: Reserving 0 and 0xFF for
  * cFS open-source development use (pending resolution of nasa/cFS#440)
  */
-#define FPRIME_APP_MISSION_REV 0x0
+#define FPRIME_GDS_MISSION_REV 0x0
 
-#define FPRIME_APP_STR_HELPER(x) #x /*!< @brief Helper function to concatenate strings from integer macros */
-#define FPRIME_APP_STR(x) \
-    FPRIME_APP_STR_HELPER(x) /*!< @brief Helper function to concatenate strings from integer macros */
+#define FPRIME_GDS_STR_HELPER(x) #x /*!< @brief Helper function to concatenate strings from integer macros */
+#define FPRIME_GDS_STR(x) \
+    FPRIME_GDS_STR_HELPER(x) /*!< @brief Helper function to concatenate strings from integer macros */
 
 /*! @brief Development Build Version Number.
  * @details Baseline git tag + Number of commits since baseline. @n
  * See @ref cfsversions for format differences between development and release versions.
  */
-#define FPRIME_APP_VERSION FPRIME_APP_BUILD_BASELINE "+dev" FPRIME_APP_STR(FPRIME_APP_BUILD_NUMBER)
+#define FPRIME_GDS_VERSION FPRIME_GDS_BUILD_BASELINE "+dev" FPRIME_GDS_STR(FPRIME_GDS_BUILD_NUMBER)
 
 /**
  * @brief Max Version String length.
@@ -67,6 +67,6 @@
  * Maximum length that an OSAL version string can be.
  * 
  */
-#define FPRIME_APP_CFG_MAX_VERSION_STR_LEN 256
+#define FPRIME_GDS_CFG_MAX_VERSION_STR_LEN 256
 
-#endif /* FPRIME_APP_VERSION_H */
+#endif /* FPRIME_GDS_VERSION_H */

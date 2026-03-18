@@ -16,7 +16,8 @@
 namespace FprimeGds {
 
 // Instantiate a malloc allocator for cmdSeq buffer allocation
-Fw::MallocAllocator mallocator;
+Fw::MallocAllocator mallocAllocator;
+Fw::MemAllocator& bufferPoolAllocator = mallocAllocator;
 
 enum TopologyConstants {
     COMM_PRIORITY = 34,

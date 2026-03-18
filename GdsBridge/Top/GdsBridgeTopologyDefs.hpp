@@ -14,7 +14,7 @@
 
 // SubtopologyTopologyDefs includes
 #include "Svc/Subtopologies/CdhCore/SubtopologyTopologyDefs.hpp"
-#include "Svc/Subtopologies/ComCcsds/SubtopologyTopologyDefs.hpp"
+#include "GdsBridge/Subtopologies/ComCcsds/SubtopologyTopologyDefs.hpp"
 #include "Svc/Subtopologies/DataProducts/SubtopologyTopologyDefs.hpp"
 #include "Svc/Subtopologies/FileHandling/SubtopologyTopologyDefs.hpp"
 
@@ -50,6 +50,7 @@ namespace PingEntries {
 // Definitions are placed within the same namespace as the FPP module that contains the topology.
 namespace FprimeGds {
 
+extern Fw::MemAllocator& bufferPoolAllocator; //!< Required global allocator object for topology memory management
 /**
  * \brief required type definition to carry state
  *
