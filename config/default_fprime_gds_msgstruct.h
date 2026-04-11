@@ -48,6 +48,13 @@
 typedef struct
 {
     CFE_MSG_CommandHeader_t CommandHeader; /**< \brief Command header */
+    uint8_t data[1];
+} FPRIME_GDS_PassThroughCmd_t;
+
+
+typedef struct
+{
+    CFE_MSG_CommandHeader_t CommandHeader; /**< \brief Command header */
 } FPRIME_GDS_NoopCmd_t;
 
 typedef struct

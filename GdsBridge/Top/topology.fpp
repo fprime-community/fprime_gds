@@ -15,10 +15,11 @@ module FprimeGds {
   instance comDriver: Drv.TcpServer base id 0x10011000
 
   @ Instance to bridge F Prime communication to the CFS bus
-  instance cfsBridge: FPrimeCfs.CfsBridge base id 0x10012000
+  instance cfsBridge: FPrimeCfs.CfsBridge base id 0x10012000 \
+    queue size Default.QUEUE_SIZE
 
   topology GdsBridge {
-    import FprimeGds.ComCccsdsSubtopology
+    import ComCcsdsNoRouter.Subtopology
 
   # ----------------------------------------------------------------------
   # Instances used in the topology
@@ -38,19 +39,27 @@ module FprimeGds {
   # ----------------------------------------------------------------------
 
     connections CfsBridge {
-      FprimeGds.tcDeframer.dataOut -> cfsBridge.dataIn
-      cfsBridge.dataReturnOut -> FprimeGds.tcDeframer.dataReturnIn
+      ComCcsdsNoRouter.spacePacketDeframer.dataOut -> cfsBridge.dataIn
+      cfsBridge.dataReturnOut -> ComCcsdsNoRouter.spacePacketDeframer.dataReturnIn
+
+      cfsBridge.dataOut -> ComCcsdsNoRouter.spacePacketFramer.dataIn
+      ComCcsdsNoRouter.spacePacketFramer.dataReturnOut -> cfsBridge.dataReturnIn
+      ComCcsdsNoRouter.spacePacketFramer.comStatusOut -> cfsBridge.comStatusIn
+    
     }
 
     connections Communications {
       # ComDriver buffer allocations
-      comDriver.allocate      -> FprimeGds.commsBufferManager.bufferGetCallee
-      comDriver.deallocate    -> FprimeGds.commsBufferManager.bufferSendIn
+      comDriver.allocate      -> ComCcsdsNoRouter.commsBufferManager.bufferGetCallee
+      comDriver.deallocate    -> ComCcsdsNoRouter.commsBufferManager.bufferSendIn
+      comDriver.ready         -> ComCcsdsNoRouter.comStub.drvConnected
       
       # ComDriver <-> ComStub (Uplink)
       # TODO: connection **CONNECTION**
-      comDriver.$recv                    ->  FprimeGds.comStub.drvReceiveIn
-      FprimeGds.comStub.drvReceiveReturnOut -> comDriver.recvReturnIn
+      comDriver.$recv                    ->  ComCcsdsNoRouter.comStub.drvReceiveIn
+      ComCcsdsNoRouter.comStub.drvReceiveReturnOut -> comDriver.recvReturnIn
+
+      ComCcsdsNoRouter.comStub.drvSendOut -> comDriver.$send
       
       # ComStub <-> ComDriver (Downlink)
 #                               -> comDriver.$send

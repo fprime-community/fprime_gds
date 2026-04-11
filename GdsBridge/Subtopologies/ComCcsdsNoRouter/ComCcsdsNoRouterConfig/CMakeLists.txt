@@ -1,0 +1,11 @@
+register_fprime_config(
+    EXCLUDE_FROM_ALL
+    SOURCES
+        "${CMAKE_CURRENT_LIST_DIR}/ComCcsdsNoRouterSubtopologyConfig.cpp"
+    HEADERS
+        "${CMAKE_CURRENT_LIST_DIR}/ComCcsdsNoRouterSubtopologyConfig.hpp"
+    AUTOCODER_INPUTS
+        "${CMAKE_CURRENT_LIST_DIR}/ComCcsdsNoRouterConfig.fpp"
+    DEPENDS
+        Fw_Types
+)

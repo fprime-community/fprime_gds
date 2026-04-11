@@ -1,14 +1,14 @@
-# ComCcsds (CCSDS Framing) Subtopology — Software Design Document (SDD)
+# ComCcsdsNoRouter (CCSDS Framing) Subtopology — Software Design Document (SDD)
 
-The **ComCcsds subtopologies** implement F´’s **CCSDS** communications stack for framing/deframing on the flight side. There are **two variants** in the same module:
+The **ComCcsdsNoRouter subtopologies** implement F´’s **CCSDS** communications stack for framing/deframing on the flight side. There are **two variants** in the same module:
 
 1. A variant that **supplies a `Svc::ComStub`** implementation of `Svc.ComInterface` and expects to be wired to a **`Drv::ByteStreamDriverModel`** (TCP/UDP/UART, etc.), and
 2. A variant that **expects an external implementation of [`Svc.ComInterface`](https://fprime.jpl.nasa.gov/latest/docs/reference/communication-adapter-interface/)** provided by the deployment.
 
-Both variants provide the standard **router + ComQueue + CCSDS framers/deframers** path and are tuned through **ComCcsdsConfig** instance properties.
+Both variants provide the standard **router + ComQueue + CCSDS framers/deframers** path and are tuned through **ComCcsdsNoRouterConfig** instance properties.
 
 > [!IMPORTANT]
-> `ComCcsds` provides framing/deframing for CCSDS SpacePackets inside TM/TC data transfer frames.
+> `ComCcsdsNoRouter` provides framing/deframing for CCSDS SpacePackets inside TM/TC data transfer frames.
 
 ---
 
@@ -21,7 +21,7 @@ Both variants provide the standard **router + ComQueue + CCSDS framers/deframers
 | SVC-COMCCSDS-003 | Provide an F´ **router** to route deframed packets (e.g., commands/files) into the flight software.            | Inspection |
 | SVC-COMCCSDS-004 | Provide a **subtopology variant that supplies `Svc::ComStub`** designed to connect to a ByteStream driver.     | Inspection |
 | SVC-COMCCSDS-005 | Provide a **subtopology variant that expects an external `Svc::ComInterface`** supplied by the deployment.     | Inspection |
-| SVC-COMCCSDS-006 | Support **configurable instance properties** (IDs, queue sizes, stack sizes, priorities) via `ComCcsdsConfig`. | Inspection |
+| SVC-COMCCSDS-006 | Support **configurable instance properties** (IDs, queue sizes, stack sizes, priorities) via `ComCcsdsNoRouterConfig`. | Inspection |
 
 ---
 
@@ -61,58 +61,58 @@ These subtopologies focus on the **CCSDS framing and deframing setup** and does 
 
 ## 3. Usage
 
-Below are **two usage patterns**, one for each variant. Replace identifiers/ports with the **exact names in `ComCcsds.fpp`**.
+Below are **two usage patterns**, one for each variant. Replace identifiers/ports with the **exact names in `ComCcsdsNoRouter.fpp`**.
 
-### 3.1 Variant A — ComCcsds **with** `Svc::ComStub` (expects a ByteStream driver)
+### 3.1 Variant A — ComCcsdsNoRouter **with** `Svc::ComStub` (expects a ByteStream driver)
 
 ```fpp
 topology Flight {
-  import ComCcsds.Subtopology
+  import ComCcsdsNoRouter.Subtopology
 
 instance comDriver: <ByteStreamDriverInterface>
 
 # (A1) Schedule ComQueue telemetry downlink (optional)
   connections RateGroups {
-    rg.RateGroupMemberOut[0] -> ComCcsds.comQueue.run
+    rg.RateGroupMemberOut[0] -> ComCcsdsNoRouter.comQueue.run
   }
 
   # (A2) Wire ByteStream driver <-> ComStub supplied by the subtopology
   connections Link {
-    comDriver.$recv                        -> ComCcsds.comStub.drvReceiveIn
-    ComCcsds.comStub.drvReceiveReturnOut   -> comDriver.recvReturnIn
-    ComCcsds.comStub.drvSendOut            -> comDriver.$send
-    comDriver.ready                        -> ComCcsds.comStub.drvConnected
+    comDriver.$recv                        -> ComCcsdsNoRouter.comStub.drvReceiveIn
+    ComCcsdsNoRouter.comStub.drvReceiveReturnOut   -> comDriver.recvReturnIn
+    ComCcsdsNoRouter.comStub.drvSendOut            -> comDriver.$send
+    comDriver.ready                        -> ComCcsdsNoRouter.comStub.drvConnected
   }
 }
 ```
 
 > [!TIP]
-> `ComCcsds.commsBufferManager` can be reused if the `ByteStreamDriver` requires buffer management.
+> `ComCcsdsNoRouter.commsBufferManager` can be reused if the `ByteStreamDriver` requires buffer management.
 
-### 3.2 Variant B — ComCcsds **without** `Svc::ComStub`
+### 3.2 Variant B — ComCcsdsNoRouter **without** `Svc::ComStub`
 
 ```fpp
 topology Flight {
-  import ComCcsds.FramingSubtopology
+  import ComCcsdsNoRouter.FramingSubtopology
 
   # (B1) Provide your own ComInterface
   instance radio: <YourComInterface>
 
   # (B2) Schedule ComQueue
   connections RateGroups {
-    rg.RateGroupMemberOut[0] -> ComCcsds.comQueue.run
+    rg.RateGroupMemberOut[0] -> ComCcsdsNoRouter.comQueue.run
   }
 
-  # (B3) Wire your ComInterface between the driver and the ComCcsds framer/deframer
+  # (B3) Wire your ComInterface between the driver and the ComCcsdsNoRouter framer/deframer
   connections Link {
     # Downlink: TM framer -> your ComInterface
-    ComCcsds.framer.dataOut         -> radio.dataIn
-    radio.dataReturnOut               -> ComCcsds.framer.dataReturnIn
-    radio.comStatusOut                -> ComCcsds.framer.comStatusIn
+    ComCcsdsNoRouter.framer.dataOut         -> radio.dataIn
+    radio.dataReturnOut               -> ComCcsdsNoRouter.framer.dataReturnIn
+    radio.comStatusOut                -> ComCcsdsNoRouter.framer.comStatusIn
 
     # Uplink: your ComInterface -> frame accumulator
-    radio.dataOut                     -> ComCcsds.frameAccumulator.dataIn
-    ComCcsds.frameAccumulator.dataReturnOut -> radio.dataReturnIn
+    radio.dataOut                     -> ComCcsdsNoRouter.frameAccumulator.dataIn
+    ComCcsdsNoRouter.frameAccumulator.dataReturnOut -> radio.dataReturnIn
   }
 }
 ```
@@ -121,10 +121,10 @@ topology Flight {
 
 ## 4. Configuration
 
-> Configure **only the instance properties** owned by the ComCcsds subtopologies. All knobs live under:
-> `Svc/Subtopologies/ComCcsds/ComCcsdsConfig/ComCcsdsConfig.fpp`
+> Configure **only the instance properties** owned by the ComCcsdsNoRouter subtopologies. All knobs live under:
+> `Svc/Subtopologies/ComCcsdsNoRouter/ComCcsdsNoRouterConfig/ComCcsdsNoRouterConfig.fpp`
 
-### 4.1 Component properties (`ComCcsdsConfig.fpp`)
+### 4.1 Component properties (`ComCcsdsNoRouterConfig.fpp`)
 
 * **Base ID** — Base identifier for the subtopologies; instance IDs are offset from this base.
 * **Queue sizes** — Depths for **`ComQueue`** and any other active/queued elements defined by the subtopology.
@@ -146,5 +146,5 @@ topology Flight {
 | SVC-COMCCSDS-003 | `fprimeRouter` — `Svc.FprimeRouter`                                                    |
 | SVC-COMCCSDS-004 | `Subtopology` (variant including `Svc.ComStub`)                                        |
 | SVC-COMCCSDS-005 | `FramingSubtopology` (variant expecting external `Svc.ComInterface`)                   |
-| SVC-COMCCSDS-006 | `ComCcsdsConfig` module                                                                |
+| SVC-COMCCSDS-006 | `ComCcsdsNoRouterConfig` module                                                                |
 

@@ -42,7 +42,7 @@ void setupTopology(const TopologyState& state) {
     // Autocoded connection wiring. Function provided by autocoder.
     connectComponents();
     // Autocoded command registration. Function provided by autocoder.
-    regCommands();
+    //regCommands();
     // Autocoded configuration. Function provided by autocoder.
     configComponents(state);
     if (state.hostname != nullptr && state.port != 0) {

@@ -14,13 +14,7 @@
 
 // SubtopologyTopologyDefs includes
 #include "Svc/Subtopologies/CdhCore/SubtopologyTopologyDefs.hpp"
-#include "GdsBridge/Subtopologies/ComCcsds/SubtopologyTopologyDefs.hpp"
-#include "Svc/Subtopologies/DataProducts/SubtopologyTopologyDefs.hpp"
-#include "Svc/Subtopologies/FileHandling/SubtopologyTopologyDefs.hpp"
-
-//ComCcsds Enum Includes
-#include "Svc/Subtopologies/ComCcsds/Ports_ComPacketQueueEnumAc.hpp"
-#include "Svc/Subtopologies/ComCcsds/Ports_ComBufferQueueEnumAc.hpp"
+#include "GdsBridge/Subtopologies/ComCcsdsNoRouter/SubtopologyTopologyDefs.hpp"
 
 // Include autocoded FPP constants
 #include "GdsBridge/Top/FppConstantsAc.hpp"
