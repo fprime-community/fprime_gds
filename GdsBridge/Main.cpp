@@ -8,14 +8,10 @@
 #include <GdsBridge/Top/GdsBridgeTopologyAc.hpp>
 // OSAL initialization
 #include <Os/Os.hpp>
-// Used for signal handling shutdown
-#include <signal.h>
 // Used for command line argument processing
 #include <getopt.h>
 // Used for printf functions
 #include <cstdlib>
-
-FprimeGds::TopologyState inputs;
 
 extern "C" {
     #include "cfe.h"
@@ -36,17 +32,6 @@ extern "C" {
 
 #include "Fw/Logger/Logger.hpp"
 
-#include <algorithm>    
-#include <cstring>
-extern "C" {
-    #include "cfe.h"
-    #include "cfe_config.h"
-    #include "fprime_gds_msgstruct.h"
-    #include "fprime_gds_msgids.h"
-    #include "cfe_sb.h"   // for CFE_SB_TransmitMsg
-}
-
-
 
 CFE_SB_PipeId_t CommandPipe;
 
@@ -55,76 +40,44 @@ CFE_SB_PipeId_t CommandPipe;
  * 
  * This initializes the F Prime GDS bridge application including a setup of the topology.
  */
-CFE_Status_t FPRIME_GDS_Init();
+CFE_Status_t FPRIME_GDS_Init(FprimeGds::TopologyState& inputs);
 
-void send() {
-     FPRIME_GDS_PassThroughCmd_t message;
-    
-    CFE_MSG_Size_t message_size = sizeof(CFE_MSG_CommandHeader_t) + 1;
-    Fw::Logger::log("[DEBUG] Calculated message size: %zu\n", message_size);
-    CFE_Status_t status = CFE_MSG_Init(reinterpret_cast<CFE_MSG_Message_t*>(&message),  CFE_SB_ValueToMsgId(FPRIME_GDS_CMD_MID), message_size);
-    if (status != CFE_SUCCESS)
-    {
-        Fw::Logger::log("[ERROR] Failed to initialize CFS message: %x\n", status);
-    } else {
-        Fw::Logger::log("[INFO] Successfully initialized CFS message\n");
-    }
-    std::memcpy(message.data, reinterpret_cast<const U8*>("!"), 1);
+// Topology state stored at file scope so the delete callback can always reach it.
+static FprimeGds::TopologyState g_topologyState;
 
-    CFE_MSG_Message_t *msg = reinterpret_cast<CFE_MSG_Message_t *>(&message);
-    CFE_MSG_Size_t decoded_size = 0;
-    CFE_MSG_GetSize(msg, &decoded_size);
-    CFE_SB_MsgId_t msgid;
-    CFE_MSG_GetMsgId(msg, &msgid);
+static void FPRIME_GDS_StopAndTeardown(FprimeGds::TopologyState& inputs)
+{
+    FprimeGds::teardownTopology(inputs);
+}
 
-    printf("msgid=0x%04x size=%u actual=%u\n",
-       (unsigned)CFE_SB_MsgIdToValue(msgid),
-       (unsigned)decoded_size,
-       1);
+static void FPRIME_GDS_Shutdown(FprimeGds::TopologyState& inputs, uint32 status)
+{
+    printf("F Prime GDS App: exiting run loop, tearing down topology\n");
+    FPRIME_GDS_StopAndTeardown(inputs);
+    CFE_ES_ExitApp(status);
+}
 
-
-    status = CFE_SB_TransmitMsg(reinterpret_cast<CFE_MSG_Message_t*>(&message), false);
-
-    //CFE_MSG_Message_t *msg = reinterpret_cast<CFE_MSG_Message_t *>(&message);
-    Fw::Logger::log("[DEBUG] Message: ");
-    for (FwSizeType i = 0; i < message_size; i++) {
-        Fw::Logger::log("%02x ", reinterpret_cast<uint8_t *>(&message)[i]);
-    }
-    Fw::Logger::log("\n");
-
-    Fw::Logger::log("[DEBUG] (Length): ");
-    for (FwSizeType i = 0; i < 2; i++) {
-        Fw::Logger::log("%02x",reinterpret_cast<uint8_t *>(&msg->CCSDS.Pri.Length)[i]);
-        if ((i % 2) == 1) {
-            Fw::Logger::log(" ");
-        }
-    }
-    Fw::Logger::log("\n");
-
-    Fw::Logger::log("[INFO] CCSDS Primary Header Length: %u\n", (msg->CCSDS.Pri.Length[0] << 8) | msg->CCSDS.Pri.Length[1]);
-    if (status != CFE_SUCCESS)
-    {
-        Fw::Logger::log("[ERROR] Failed to send CFS message: %x\n", status);
-    } else {
-        Fw::Logger::log("[INFO] Successfully sent CFS message\n");
-    }
+void FPRIME_GDS_delete_callback(void)
+{
+    printf("F Prime GDS App: delete callback -- tearing down topology\n");
+    FPRIME_GDS_StopAndTeardown(g_topologyState);
 }
 
 // Main entry point (see above)
 void FPRIME_GDS_Main(void) {
     Os::init();
+    FprimeGds::TopologyState& inputs = g_topologyState;
     inputs.hostname = "0.0.0.0";
     inputs.port = 15010;
 
     uint32 run_status = CFE_ES_RunStatus_APP_RUN;
     
     // Initialize the CFS application and the F Prime setup within 
-    CFE_Status_t status = FPRIME_GDS_Init();
+    CFE_Status_t status = FPRIME_GDS_Init(inputs);
     if (status != CFE_SUCCESS) {
-        FprimeGds::teardownTopology(inputs);
-        CFE_ES_ExitApp(status);
+        FPRIME_GDS_Shutdown(inputs, status);
     }
-
+    printf("[INFO] F Prime Gds Running main loop\n");
     // Main loop to run the GDS bridge application
     while (CFE_ES_RunLoop(&run_status) == true) {
         // Uplink processing
@@ -136,14 +89,13 @@ void FPRIME_GDS_Main(void) {
         } else if (status != Fw::QueuedComponentBase::MSG_DISPATCH_OK) {
             Fw::Logger::log("[WARNING] Failed to process a message in the queue: %d\n", status);
         }
+        Os::Task::delay(Fw::TimeInterval(0, 100)); // Sleep to avoid busy loop when idle. Adjust as needed for responsiveness.
     }
-    // Shudown, shutdown, everybody shutdown!
-    FprimeGds::teardownTopology(inputs);
-    CFE_ES_ExitApp(run_status);
+    FPRIME_GDS_Shutdown(inputs, run_status);
 }
 
 // Initialize the GDS bridge
-CFE_Status_t FPRIME_GDS_Init() {
+CFE_Status_t FPRIME_GDS_Init(FprimeGds::TopologyState& inputs) {
     printf("Initializing FPrime GDS App...\n");
     CFE_Status_t status;
     char         VersionString[FPRIME_GDS_CFG_MAX_VERSION_STR_LEN];
@@ -176,6 +128,7 @@ CFE_Status_t FPRIME_GDS_Init() {
 
     }
     // Set up the topology that runs the GDS bridge application
+    OS_TaskInstallDeleteHandler(&FPRIME_GDS_delete_callback);
     FprimeGds::setupTopology(inputs);
 
     // If setup was successful so far, then print the version message
