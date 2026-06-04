@@ -1,12 +1,9 @@
 cmake_minimum_required(VERSION 3.22)
 
 project(CFE_FPRIME_GDS C CXX)
-set(FPRIME_PROJECT_ROOT "${PROJECT_SOURCE_DIR}")
-list(APPEND FPRIME_BUILD_LOCATIONS "${PROJECT_SOURCE_DIR}" "${PROJECT_BINARY_DIR}" "${PROJECT_SOURCE_DIR}/../fprime_app/" "${PROJECT_BINARY_DIR}/../fprime_app/")
+register_fprime_project()
 add_compile_options(-fPIC)
-list(APPEND CMAKE_MODULE_PATH "${FPRIME_FRAMEWORK_PATH}/cmake")
-fprime_setup_global_includes()
-include_directories("${PROJECT_SOURCE_DIR}" "${PROJECT_BINARY_DIR}" "${CMAKE_CURRENT_LIST_DIR}/fsw/inc" ${FPRIME_INCLUDE_ROOTS})
+
 
 set(APP_SRC_FILES
   fsw/src/fprime_gds.c
