@@ -26,6 +26,17 @@
 #include "cfe_core_api_base_msgids.h"
 #include "fprime_gds_topicids.h"
 
+/*
+ * Older cFE versions (e.g. draco) do not provide the topic ID to MID value
+ * mapping macros; derive them from the platform MID base values instead.
+ */
+#ifndef CFE_PLATFORM_CMD_TOPICID_TO_MIDV
+#define CFE_PLATFORM_CMD_TOPICID_TO_MIDV(topic) (CFE_PLATFORM_CMD_MID_BASE | (topic))
+#endif
+#ifndef CFE_PLATFORM_TLM_TOPICID_TO_MIDV
+#define CFE_PLATFORM_TLM_TOPICID_TO_MIDV(topic) (CFE_PLATFORM_TLM_MID_BASE | (topic))
+#endif
+
 #define FPRIME_GDS_CMD_PLATFORM_MIDVAL(x) CFE_PLATFORM_CMD_TOPICID_TO_MIDV(FPRIME_GDS_MISSION_##x##_TOPICID)
 #define FPRIME_GDS_TLM_PLATFORM_MIDVAL(x) CFE_PLATFORM_TLM_TOPICID_TO_MIDV(FPRIME_GDS_MISSION_##x##_TOPICID)
 

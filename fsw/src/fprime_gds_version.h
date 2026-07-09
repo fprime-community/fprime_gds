@@ -71,4 +71,20 @@
  */
 #define FPRIME_GDS_CFG_MAX_VERSION_STR_LEN 256
 
+/*
+ * Older cFE versions (e.g. draco) do not provide CFE_Config_GetVersionString;
+ * provide an equivalent local implementation when building against them.
+ */
+#include "cfe_version.h"
+#if CFE_MAJOR_VERSION < 7
+#include <stdio.h>
+static inline void CFE_Config_GetVersionString(char *Buf, size_t Size, const char *Component,
+                                               const char *SrcVersion, const char *CodeName,
+                                               const char *LastOffcRel)
+{
+    (void)LastOffcRel;
+    snprintf(Buf, Size, "%s %s (%s)", Component, SrcVersion, CodeName);
+}
+#endif
+
 #endif /* FPRIME_GDS_VERSION_H */
