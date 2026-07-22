@@ -39,13 +39,14 @@ module FprimeGds {
   # ----------------------------------------------------------------------
 
     connections CfsBridge {
-      ComCcsdsNoRouter.spacePacketDeframer.dataOut -> cfsBridge.dataIn
-      cfsBridge.dataReturnOut -> ComCcsdsNoRouter.spacePacketDeframer.dataReturnIn
+      # Uplink: TC frames carry complete space packets, passed whole to the cFS software bus
+      ComCcsdsNoRouter.tcDeframer.dataOut -> cfsBridge.dataIn
+      cfsBridge.dataReturnOut -> ComCcsdsNoRouter.tcDeframer.dataReturnIn
 
-      cfsBridge.dataOut -> ComCcsdsNoRouter.spacePacketFramer.dataIn
-      ComCcsdsNoRouter.spacePacketFramer.dataReturnOut -> cfsBridge.dataReturnIn
-      ComCcsdsNoRouter.spacePacketFramer.comStatusOut -> cfsBridge.comStatusIn
-    
+      # Downlink: complete space packets from the cFS software bus are wrapped in TM frames
+      cfsBridge.dataOut -> ComCcsdsNoRouter.framer.dataIn
+      ComCcsdsNoRouter.framer.dataReturnOut -> cfsBridge.dataReturnIn
+      ComCcsdsNoRouter.framer.comStatusOut -> cfsBridge.comStatusIn
     }
 
     connections Communications {
