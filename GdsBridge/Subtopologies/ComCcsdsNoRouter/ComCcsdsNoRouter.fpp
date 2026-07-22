@@ -64,14 +64,8 @@ module ComCcsdsNoRouter {
 
     instance tcDeframer: Svc.Ccsds.TcDeframer base id ComCcsdsNoRouterConfig.BASE_ID + 0x04000
 
-    instance spacePacketDeframer: Svc.Ccsds.SpacePacketDeframer base id ComCcsdsNoRouterConfig.BASE_ID + 0x05000
-
     # NOTE: name 'framer' is used for the framer that connects to the Com Adapter Interface for better subtopology interoperability
     instance framer: Svc.Ccsds.TmFramer base id ComCcsdsNoRouterConfig.BASE_ID + 0x07000
-
-    instance spacePacketFramer: Svc.Ccsds.SpacePacketFramer base id ComCcsdsNoRouterConfig.BASE_ID + 0x08000
-
-    instance apidManager: Svc.Ccsds.ApidManager base id ComCcsdsNoRouterConfig.BASE_ID + 0x09000
 
     instance comStub: Svc.ComStub base id ComCcsdsNoRouterConfig.BASE_ID + 0x0A000
 
@@ -94,24 +88,11 @@ module ComCcsdsNoRouter {
         instance commsBufferManager
         instance frameAccumulator
         instance tcDeframer
-        instance spacePacketDeframer
         instance framer
-        instance spacePacketFramer
-        instance apidManager
 
         connections Downlink {
-            # ComQueue <-> SpacePacketFramer
-            # SpacePacketFramer buffer and APID management
-            spacePacketFramer.bufferAllocate   -> commsBufferManager.bufferGetCallee
-            spacePacketFramer.bufferDeallocate -> commsBufferManager.bufferSendIn
-            spacePacketFramer.getApidSeqCount  -> apidManager.getApidSeqCountIn
-            # SpacePacketFramer <-> TmFramer
-            spacePacketFramer.dataOut -> framer.dataIn
-
-            framer.dataReturnOut  -> spacePacketFramer.dataReturnIn
-
-            # ComStatus
-            framer.comStatusOut            -> spacePacketFramer.comStatusIn
+            # Space packets pass through this topology whole: the downstream user connects a source of
+            # complete space packets directly to the TmFramer
             # (Outgoing) Framer <-> ComInterface connections shall be established by the user
         }
 
@@ -123,17 +104,8 @@ module ComCcsdsNoRouter {
             # FrameAccumulator <-> TcDeframer
             frameAccumulator.dataOut -> tcDeframer.dataIn
             tcDeframer.dataReturnOut -> frameAccumulator.dataReturnIn
-            # TcDeframer <-> SpacePacketDeframer
-            tcDeframer.dataOut                -> spacePacketDeframer.dataIn
-            spacePacketDeframer.dataReturnOut -> tcDeframer.dataReturnIn
-            # SpacePacketDeframer APID validation
-            spacePacketDeframer.validateApidSeqCount -> apidManager.validateApidSeqCountIn
-            # SpacePacketDeframer <-> Router
-            #spacePacketDeframer.dataOut -> fprimeRouter.dataIn
-            #fprimeRouter.dataReturnOut  -> spacePacketDeframer.dataReturnIn
-            # Router buffer allocations
-            #fprimeRouter.bufferAllocate   -> commsBufferManager.bufferGetCallee
-            #fprimeRouter.bufferDeallocate -> commsBufferManager.bufferSendIn
+            # TcDeframer output carries complete space packets; the downstream user connects it to the
+            # consumer of complete space packets (e.g. a CfsBridge)
         }
     } # end FramingSubtopology
 
