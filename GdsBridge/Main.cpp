@@ -1,6 +1,6 @@
 // ======================================================================
 // \title  Main.cpp
-// \brief main program for the F' application. Intended for CLI-based systems (Linux, macOS)
+// \brief cFS application entry point hosting the F Prime GDS bridge topology
 //
 // ======================================================================
 // Used to access topology functions
@@ -34,6 +34,13 @@ extern "C" {
  */
 CFE_Status_t FPRIME_GDS_Init(FprimeGds::TopologyState& inputs);
 
+// Event IDs for events emitted directly by the application entry point
+enum FPrimeGdsEventIds {
+    FPRIME_GDS_INIT_INF_EID = 1,      //!< Application initialized
+    FPRIME_GDS_PIPE_ERR_EID = 2,      //!< Software bus pipe creation failed
+    FPRIME_GDS_SUBSCRIBE_ERR_EID = 3  //!< Software bus subscription failed
+};
+
 // Topology state stored at file scope so the delete callback can always reach it.
 static FprimeGds::TopologyState g_topologyState;
 
@@ -62,10 +69,11 @@ void FPRIME_GDS_Main(void) {
 
     uint32 run_status = CFE_ES_RunStatus_APP_RUN;
     
-    // Initialize the CFS application and the F Prime setup within 
+    // Initialization failure is fatal: the topology is not started and the app exits with error status
     CFE_Status_t status = FPRIME_GDS_Init(inputs);
     if (status != CFE_SUCCESS) {
-        FPRIME_GDS_Shutdown(inputs, status);
+        CFE_ES_ExitApp(CFE_ES_RunStatus_APP_ERROR);
+        return;
     }
     // Main loop to run the GDS bridge application
     while (CFE_ES_RunLoop(&run_status) == true) {
@@ -78,8 +86,8 @@ void FPRIME_GDS_Main(void) {
         } else if (status != Fw::QueuedComponentBase::MSG_DISPATCH_OK) {
             Fw::Logger::log("[WARNING] Failed to process a message in the queue: %d\n", status);
         }
-        // Sleep to avoid a busy loop when idle
-        Os::Task::delay(Fw::TimeInterval(0, 100));
+        // Sleep to avoid a busy loop when idle; a failed delay only costs idle sleep
+        (void)Os::Task::delay(Fw::TimeInterval(0, 100));
     }
     FPRIME_GDS_Shutdown(inputs, run_status);
 }
@@ -95,45 +103,52 @@ CFE_Status_t FPRIME_GDS_Init(FprimeGds::TopologyState& inputs) {
     status = CFE_EVS_Register(NULL, 0, CFE_EVS_EventFilter_BINARY);
     if (status != CFE_SUCCESS)
     {
-        CFE_ES_WriteToSysLog("F Prime GDS App: Error Registering Events, RC = 0x%08lX\n", (unsigned long)status);
+        CFE_ES_WriteToSysLog("F Prime GDS App: Error Registering Events, RC = 0x%08lX\n",
+                             static_cast<unsigned long>(status));
     }  else
     {
         status = FprimeGds::cfsBridge.configure(FPRIME_GDS_PLATFORM_PIPE_DEPTH, FPRIME_GDS_PLATFORM_PIPE_NAME, true);
         if (status != CFE_SUCCESS)
         {
-            CFE_EVS_SendEvent(2, CFE_EVS_EventType_ERROR,
-                              "F Prime GDS App: Error creating SB Command Pipe, RC = 0x%08lX", (unsigned long)status);
+            (void)CFE_EVS_SendEvent(FPRIME_GDS_PIPE_ERR_EID, CFE_EVS_EventType_ERROR,
+                                    "F Prime GDS App: Error creating SB Command Pipe, RC = 0x%08lX",
+                                    static_cast<unsigned long>(status));
         }
     }
     if (status == CFE_SUCCESS)
     {
-        const ComCfg::Apid::T downlinkApids[] = {
+        static constexpr ComCfg::Apid::T downlinkApids[] = {
             ComCfg::Apid::FW_PACKET_DP,
             ComCfg::Apid::FW_PACKET_TELEM,
             ComCfg::Apid::FW_PACKET_LOG,
             ComCfg::Apid::FW_PACKET_PACKETIZED_TLM,
             ComCfg::Apid::FW_PACKET_FILE,
         };
+        FwSizeType failedIndex = 0;
         for (FwSizeType i = 0; (i < FW_NUM_ARRAY_ELEMENTS(downlinkApids)) && (status == CFE_SUCCESS); i++)
         {
+            failedIndex = i;
             status = FprimeGds::cfsBridge.subscribe(downlinkApids[i]);
         }
         if (status != CFE_SUCCESS)
         {
-            CFE_EVS_SendEvent(2, CFE_EVS_EventType_ERROR,
-                              "F Prime GDS App: Error subscribing to cFS messages, RC = 0x%08lX", (unsigned long)status);
+            (void)CFE_EVS_SendEvent(FPRIME_GDS_SUBSCRIBE_ERR_EID, CFE_EVS_EventType_ERROR,
+                                    "F Prime GDS App: Error subscribing to APID 0x%04X, RC = 0x%08lX",
+                                    static_cast<unsigned int>(downlinkApids[failedIndex]),
+                                    static_cast<unsigned long>(status));
         }
     }
-    // Set up the topology that runs the GDS bridge application
-    OS_TaskInstallDeleteHandler(&FPRIME_GDS_delete_callback);
-    FprimeGds::setupTopology(inputs);
 
-    // If setup was successful so far, then print the version message
+    // Only bring up the topology (and its teardown handler) when initialization succeeded
     if (status == CFE_SUCCESS)
     {
+        OS_TaskInstallDeleteHandler(&FPRIME_GDS_delete_callback);
+        FprimeGds::setupTopology(inputs);
+
         CFE_Config_GetVersionString(VersionString, FPRIME_GDS_CFG_MAX_VERSION_STR_LEN, "F Prime GDS App", FPRIME_GDS_VERSION,
                                     FPRIME_GDS_BUILD_CODENAME, FPRIME_GDS_LAST_OFFICIAL);
-        CFE_EVS_SendEvent(1, CFE_EVS_EventType_INFORMATION, "F Prime GDS App Initialized.%s", VersionString);
+        (void)CFE_EVS_SendEvent(FPRIME_GDS_INIT_INF_EID, CFE_EVS_EventType_INFORMATION,
+                                "F Prime GDS App Initialized.%s", VersionString);
     }
 
     return status;
