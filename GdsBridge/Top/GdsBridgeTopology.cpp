@@ -66,15 +66,10 @@ void teardownTopology(const TopologyState& state) {
     // Autocoded (active component) task clean-up. Functions provided by topology autocoder.
     stopTasks(state);
     freeThreads(state);
-    printf("[TERMINATING] The thing\n");
     // Stop the server from listening
     comDriver.terminate();
-    printf("[STOPPING] The thing\n");
     comDriver.stop();
-    printf("[JOINING] The thing\n");
     (void)comDriver.join();
-    printf("[TEARING DOWN] The thing\n");
     tearDownComponents(state);
-    printf("[TEARDOWN COMPLETE] The thing\n");
 }
 };  // namespace FprimeGds
