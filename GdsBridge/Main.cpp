@@ -107,7 +107,8 @@ CFE_Status_t FPRIME_GDS_Init(FprimeGds::TopologyState& inputs) {
                              static_cast<unsigned long>(status));
     }  else
     {
-        status = FprimeGds::cfsBridge.configure(FPRIME_GDS_PLATFORM_PIPE_DEPTH, FPRIME_GDS_PLATFORM_PIPE_NAME, true);
+        // Wrap uplinked F Prime command packets as valid cFS command packets (secondary header + checksum)
+        status = FprimeGds::cfsBridge.configure(FPRIME_GDS_PLATFORM_PIPE_DEPTH, FPRIME_GDS_PLATFORM_PIPE_NAME, true, true);
         if (status != CFE_SUCCESS)
         {
             (void)CFE_EVS_SendEvent(FPRIME_GDS_PIPE_ERR_EID, CFE_EVS_EventType_ERROR,

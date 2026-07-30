@@ -39,7 +39,8 @@ module FprimeGds {
   # ----------------------------------------------------------------------
 
     connections CfsBridge {
-      # Uplink: TC frames carry complete space packets, passed whole to the cFS software bus
+      # Uplink: TC frames carry complete space packets; F Prime command packets are wrapped as
+      # valid cFS command packets (secondary header + checksum) before transmission on the SB
       ComCcsdsNoRouter.tcDeframer.dataOut -> cfsBridge.dataIn
       cfsBridge.dataReturnOut -> ComCcsdsNoRouter.tcDeframer.dataReturnIn
 
