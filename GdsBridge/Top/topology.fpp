@@ -19,7 +19,7 @@ module FprimeGds {
     queue size Default.QUEUE_SIZE
 
   @ Instance to strip cFS telemetry secondary headers from downlinked space packets
-  instance tlmStripper: FPrimeCfs.CfsTlmStripper base id 0x10013000
+  instance tlmStripper: FprimeGds.CfsTlmStripper base id 0x10013000
 
   topology GdsBridge {
     import ComCcsdsNoRouter.Subtopology
