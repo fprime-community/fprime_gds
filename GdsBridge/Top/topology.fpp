@@ -18,6 +18,9 @@ module FprimeGds {
   instance cfsBridge: FPrimeCfs.CfsBridge base id 0x10012000 \
     queue size Default.QUEUE_SIZE
 
+  @ Instance to strip cFS telemetry secondary headers from downlinked space packets
+  instance tlmStripper: FprimeGds.CfsTlmStripper base id 0x10013000
+
   topology GdsBridge {
     import ComCcsdsNoRouter.Subtopology
 
@@ -27,6 +30,7 @@ module FprimeGds {
     instance chronoTime
     instance comDriver
     instance cfsBridge
+    instance tlmStripper
 
   # ----------------------------------------------------------------------
   # Pattern graph specifiers
@@ -44,9 +48,12 @@ module FprimeGds {
       ComCcsdsNoRouter.tcDeframer.dataOut -> cfsBridge.dataIn
       cfsBridge.dataReturnOut -> ComCcsdsNoRouter.tcDeframer.dataReturnIn
 
-      # Downlink: complete space packets from the cFS software bus are wrapped in TM frames
-      cfsBridge.dataOut -> ComCcsdsNoRouter.framer.dataIn
-      ComCcsdsNoRouter.framer.dataReturnOut -> cfsBridge.dataReturnIn
+      # Downlink: complete space packets from the cFS software bus have their cFS
+      # telemetry secondary headers stripped in place, then are wrapped in TM frames
+      cfsBridge.dataOut -> tlmStripper.dataIn
+      tlmStripper.dataReturnOut -> cfsBridge.dataReturnIn
+      tlmStripper.dataOut -> ComCcsdsNoRouter.framer.dataIn
+      ComCcsdsNoRouter.framer.dataReturnOut -> tlmStripper.dataReturnIn
       ComCcsdsNoRouter.framer.comStatusOut -> cfsBridge.comStatusIn
     }
 

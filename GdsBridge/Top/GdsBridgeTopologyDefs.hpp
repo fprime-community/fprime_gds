@@ -6,14 +6,7 @@
 #ifndef GDSBRIDGE_GDSBRIDGETOPOLOGYDEFS_HPP
 #define GDSBRIDGE_GDSBRIDGETOPOLOGYDEFS_HPP
 
-// Subtopology PingEntries includes
-#include "Svc/Subtopologies/CdhCore/PingEntries.hpp"
-#include "Svc/Subtopologies/ComCcsds/PingEntries.hpp"
-#include "Svc/Subtopologies/DataProducts/PingEntries.hpp"
-#include "Svc/Subtopologies/FileHandling/PingEntries.hpp"
-
 // SubtopologyTopologyDefs includes
-#include "Svc/Subtopologies/CdhCore/SubtopologyTopologyDefs.hpp"
 #include "GdsBridge/Subtopologies/ComCcsdsNoRouter/SubtopologyTopologyDefs.hpp"
 
 // Include autocoded FPP constants

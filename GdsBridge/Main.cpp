@@ -129,7 +129,9 @@ CFE_Status_t FPRIME_GDS_Init(FprimeGds::TopologyState& inputs) {
         for (FwSizeType i = 0; (i < FW_NUM_ARRAY_ELEMENTS(downlinkApids)) && (status == CFE_SUCCESS); i++)
         {
             failedIndex = i;
-            status = FprimeGds::cfsBridge.subscribe(downlinkApids[i]);
+            // Downlink packets are published as cFS telemetry messages (secondary header flag set)
+            status = FprimeGds::cfsBridge.subscribeCfs(downlinkApids[i],
+                                                       FPrimeCfs::CfsBridge::CfsMessageType::TELEMETRY);
         }
         if (status != CFE_SUCCESS)
         {

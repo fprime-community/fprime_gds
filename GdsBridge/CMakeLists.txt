@@ -11,6 +11,7 @@
 # Topology and Components
 ###
 add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/Subtopologies/ComCcsdsNoRouter")
+add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/CfsTlmStripper")
 add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/Top/")
 
 # Create the app module. This will create the CFS application and build it around the F Prime Main.cpp deployment.
