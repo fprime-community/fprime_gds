@@ -49,13 +49,11 @@ module FprimeGds {
       cfsBridge.dataReturnOut -> ComCcsdsNoRouter.tcDeframer.dataReturnIn
 
       # Downlink: complete space packets from the cFS software bus have their cFS
-      # telemetry secondary headers stripped, then are wrapped in TM frames
+      # telemetry secondary headers stripped in place, then are wrapped in TM frames
       cfsBridge.dataOut -> tlmStripper.dataIn
       tlmStripper.dataReturnOut -> cfsBridge.dataReturnIn
       tlmStripper.dataOut -> ComCcsdsNoRouter.framer.dataIn
       ComCcsdsNoRouter.framer.dataReturnOut -> tlmStripper.dataReturnIn
-      tlmStripper.bufferAllocate -> ComCcsdsNoRouter.commsBufferManager.bufferGetCallee
-      tlmStripper.bufferDeallocate -> ComCcsdsNoRouter.commsBufferManager.bufferSendIn
       ComCcsdsNoRouter.framer.comStatusOut -> cfsBridge.comStatusIn
     }
 
