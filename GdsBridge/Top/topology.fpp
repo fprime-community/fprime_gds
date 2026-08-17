@@ -21,7 +21,7 @@ module FprimeGds {
   @ Instance to strip cFS telemetry secondary headers from downlinked space packets
   instance tlmStripper: FprimeGds.CfsTlmStripper base id 0x10013000
 
-  topology GdsBridge {
+  deployment topology GdsBridge {
     import ComCcsdsNoRouter.Subtopology
 
   # ----------------------------------------------------------------------
