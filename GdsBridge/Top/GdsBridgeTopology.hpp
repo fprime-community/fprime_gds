@@ -37,6 +37,14 @@ namespace FprimeGds {
 void setupTopology(const TopologyState& state);
 
 /**
+ * \brief run one iteration of the polled topology work
+ *
+ * Called from the application main loop. Advances the polling timer that drives the downlink rate group, which
+ * flushes partially filled TM frames out of the aggregator.
+ */
+void cycleTopology();
+
+/**
  * \brief teardown the F´ topology
  *
  * Tears down the F´ topology in preparation for shutdown. This is done via a series of steps, some provided by
