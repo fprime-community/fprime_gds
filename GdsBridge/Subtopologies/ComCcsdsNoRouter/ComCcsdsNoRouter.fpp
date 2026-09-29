@@ -13,6 +13,25 @@ module ComCcsdsNoRouter {
     # ----------------------------------------------------------------------
     # Active Components
     # ----------------------------------------------------------------------
+    instance aggregator: Svc.ComAggregator base id ComCcsdsNoRouterConfig.BASE_ID + 0x06000 \
+        queue size ComCcsdsNoRouterConfig.QueueSizes.aggregator \
+        stack size ComCcsdsNoRouterConfig.StackSizes.aggregator \
+        priority ComCcsdsNoRouterConfig.Priorities.aggregator \
+    {
+        phase Fpp.ToCpp.Phases.configComponents """
+        // Non-spanning: each space packet stays whole inside one idle-filled TM data field
+        ComCcsdsNoRouter::aggregator.configure(
+            static_cast<FwSizeType>(Svc::Ccsds::TmDataFieldSize),
+            false,
+            2,
+            ComCcsdsNoRouter::Allocation::memAllocator
+        );
+        """
+
+        phase Fpp.ToCpp.Phases.tearDownComponents """
+        ComCcsdsNoRouter::aggregator.cleanup();
+        """
+    }
 
     # ----------------------------------------------------------------------
     # Passive Components
@@ -82,7 +101,16 @@ module ComCcsdsNoRouter {
         #     - [Svc.Com].dataReturnOut -> ComCcsdsNoRouter.framer.dataReturnIn
         #     - [Svc.Com].comStatusOut  -> ComCcsdsNoRouter.framer.comStatusIn
         #     - [Svc.Com].dataOut       -> ComCcsdsNoRouter.frameAccumulator.dataIn
+        #
+        # The source of complete space packets connects to the aggregator, and a rate group must drive
+        # ComCcsdsNoRouter.aggregator.timeout so that partially filled frames are flushed:
+        #     - [source].dataOut                          -> ComCcsdsNoRouter.aggregator.dataIn
+        #     - ComCcsdsNoRouter.aggregator.dataReturnOut -> [source].dataReturnIn
+        #     - ComCcsdsNoRouter.aggregator.comStatusOut  -> [source].comStatusIn
+        #     - [rate group].RateGroupMemberOut[i]        -> ComCcsdsNoRouter.aggregator.timeout
 
+        # Active Components
+        instance aggregator
 
         # Passive Components
         instance commsBufferManager
@@ -91,8 +119,11 @@ module ComCcsdsNoRouter {
         instance framer
 
         connections Downlink {
-            # Space packets pass through this topology whole: the downstream user connects a source of
-            # complete space packets directly to the TmFramer
+            # Space packets are packed whole into fixed-size, idle-filled TM data fields by the aggregator,
+            # then wrapped in TM frames. The aggregator input connections shall be established by the user.
+            aggregator.dataOut     -> framer.dataIn
+            framer.dataReturnOut   -> aggregator.dataReturnIn
+            framer.comStatusOut    -> aggregator.comStatusIn
             # (Outgoing) Framer <-> ComInterface connections shall be established by the user
         }
 

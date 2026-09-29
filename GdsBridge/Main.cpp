@@ -86,6 +86,8 @@ void FPRIME_GDS_Main(void) {
         } else if (status != Fw::QueuedComponentBase::MSG_DISPATCH_OK) {
             Fw::Logger::log("[WARNING] Failed to process a message in the queue: %d\n", status);
         }
+        // Downlink rate group: flushes partially filled TM frames out of the aggregator
+        FprimeGds::cycleTopology();
         // Sleep to avoid a busy loop when idle; a failed delay only costs idle sleep
         (void)Os::Task::delay(Fw::TimeInterval(0, 100));
     }

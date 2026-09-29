@@ -21,6 +21,21 @@ module FprimeGds {
   @ Instance to strip cFS telemetry secondary headers from downlinked space packets
   instance tlmStripper: FprimeGds.CfsTlmStripper base id 0x10013000
 
+  @ Timer polled from the application main loop, drives the downlink rate group
+  instance pollingTimer: Svc.PollingTimer base id 0x10014000
+
+  @ Rate group flushing partially filled downlink frames out of the aggregator
+  instance rateGroup: Svc.PassiveRateGroup base id 0x10015000 \
+  {
+    phase Fpp.ToCpp.Phases.configObjects """
+    Svc::PassiveRateGroup::ContextArray context;
+    """
+
+    phase Fpp.ToCpp.Phases.configComponents """
+    FprimeGds::rateGroup.configure(ConfigObjects::FprimeGds_rateGroup::context);
+    """
+  }
+
   deployment topology GdsBridge {
     import ComCcsdsNoRouter.Subtopology
 
@@ -31,6 +46,8 @@ module FprimeGds {
     instance comDriver
     instance cfsBridge
     instance tlmStripper
+    instance pollingTimer
+    instance rateGroup
 
   # ----------------------------------------------------------------------
   # Pattern graph specifiers
@@ -49,12 +66,20 @@ module FprimeGds {
       cfsBridge.dataReturnOut -> ComCcsdsNoRouter.tcDeframer.dataReturnIn
 
       # Downlink: complete space packets from the cFS software bus have their cFS
-      # telemetry secondary headers stripped in place, then are wrapped in TM frames
+      # telemetry secondary headers stripped in place, then are packed whole into
+      # idle-filled TM data fields by the aggregator before being wrapped in TM frames
       cfsBridge.dataOut -> tlmStripper.dataIn
       tlmStripper.dataReturnOut -> cfsBridge.dataReturnIn
-      tlmStripper.dataOut -> ComCcsdsNoRouter.framer.dataIn
-      ComCcsdsNoRouter.framer.dataReturnOut -> tlmStripper.dataReturnIn
-      ComCcsdsNoRouter.framer.comStatusOut -> cfsBridge.comStatusIn
+      tlmStripper.dataOut -> ComCcsdsNoRouter.aggregator.dataIn
+      ComCcsdsNoRouter.aggregator.dataReturnOut -> tlmStripper.dataReturnIn
+      ComCcsdsNoRouter.aggregator.comStatusOut -> cfsBridge.comStatusIn
+    }
+
+    connections RateGroup {
+      # The polling timer is cycled from the application main loop; the rate group flushes
+      # partially filled downlink frames so telemetry is not held until a frame is full
+      pollingTimer.CycleOut -> rateGroup.CycleIn
+      rateGroup.RateGroupMemberOut[0] -> ComCcsdsNoRouter.aggregator.timeout
     }
 
     connections Communications {

@@ -23,6 +23,9 @@ enum TopologyConstants {
     COMM_PRIORITY = 34,
 };
 
+// Period of the downlink rate group that flushes partially filled TM frames out of the aggregator
+const Fw::TimeInterval RATE_GROUP_PERIOD(1, 0);
+
 /**
  * \brief configure/setup components in project-specific way
  *
@@ -31,7 +34,11 @@ enum TopologyConstants {
  * desired, but is extracted here for clarity.
  */
 void configureTopology() {
-    // NOTE: no configuration strictly required
+    pollingTimer.startTimer(RATE_GROUP_PERIOD);
+}
+
+void cycleTopology() {
+    pollingTimer.cycle();
 }
 
 void setupTopology(const TopologyState& state) {
@@ -66,6 +73,7 @@ void teardownTopology(const TopologyState& state) {
     // Autocoded (active component) task clean-up. Functions provided by topology autocoder.
     stopTasks(state);
     freeThreads(state);
+    pollingTimer.stop();
     // Stop the server from listening
     comDriver.terminate();
     comDriver.stop();
