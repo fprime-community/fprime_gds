@@ -22,7 +22,7 @@ For each incoming buffer holding a complete space packet:
 - Telemetry packets (packet type bit clear) with the secondary header flag set have the 10-byte cFS telemetry
   secondary header removed **in place**: the primary header is rewritten into the 6 bytes immediately preceding
   the payload (over the end of the secondary header), the packet data length field shrinks by 10, the secondary header flag
-  is cleared, and the buffer's data pointer is advanced by 6 with the size reduced accordingly. No allocation
+  is cleared, and the buffer's data pointer is advanced by 10 with the size reduced accordingly. No allocation
   or payload copy is performed. The forwarded context has `hasSecHdr = false`.
 - All other packets (commands, packets without the secondary header flag) are forwarded unchanged.
 

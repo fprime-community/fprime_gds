@@ -31,6 +31,7 @@ class CfsTlmStripperTester final : public CfsTlmStripperGTestBase {
 
     //! A telemetry packet with a secondary header is stripped in place
     void testTelemetryStrip();
+    void testLiteralCfeHeader();
 
     //! A command packet is forwarded unchanged
     void testCommandPassthrough();

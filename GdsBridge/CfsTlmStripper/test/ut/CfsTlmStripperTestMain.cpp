@@ -56,3 +56,11 @@ int main(int argc, char** argv) {
     STest::Random::seed();
     return RUN_ALL_TESTS();
 }
+
+TEST(Nominal, LiteralCfeHeader) {
+    COMMENT("A literal 16-byte CFE_MSG_TelemetryHeader_t is stripped so the payload at offset 16 follows the rebuilt primary header");
+    REQUIREMENT("FPRIMEGDS-CFSTLMSTRIPPER-001");
+    REQUIREMENT("FPRIMEGDS-CFSTLMSTRIPPER-002");
+    FprimeGds::CfsTlmStripperTester tester;
+    tester.testLiteralCfeHeader();
+}
