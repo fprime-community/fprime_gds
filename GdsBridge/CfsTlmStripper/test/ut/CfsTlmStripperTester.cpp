@@ -159,4 +159,23 @@ void CfsTlmStripperTester ::testComStatusPassthrough() {
     ASSERT_EQ(this->fromPortHistory_comStatusOut->at(0).condition, status);
 }
 
+void CfsTlmStripperTester ::testLiteralCfeHeader() {
+    // A literal CFE_MSG_TelemetryHeader_t: primary 08 23 C0 2A 00 0D (sec hdr, APID 0x023, length 13),
+    // time 01 02 03 04 AB CD, Spare[4] zero, then a 4-byte payload: the payload starts at offset 16
+    U8 original[20] = {0x08, 0x23, 0xC0, 0x2A, 0x00, 0x0D, 0x01, 0x02, 0x03, 0x04,
+                       0xAB, 0xCD, 0x00, 0x00, 0x00, 0x00, 0xDE, 0xAD, 0xBE, 0xEF};
+    (void)std::memcpy(this->m_packetStorage, original, sizeof(original));
+    Fw::Buffer data(this->m_packetStorage, sizeof(original));
+    ComCfg::FrameContext context;
+    context.set_hasSecHdr(true);
+    this->invoke_to_dataIn(0, data, context);
+    ASSERT_from_dataOut_SIZE(1);
+    Fw::Buffer out = this->fromPortHistory_dataOut->at(0).data;
+    ASSERT_EQ(out.getSize(), 10u);
+    ASSERT_EQ(out.getData(), &this->m_packetStorage[10]);
+    const U8 expected[10] = {0x00, 0x23, 0xC0, 0x2A, 0x00, 0x03, 0xDE, 0xAD, 0xBE, 0xEF};
+    ASSERT_EQ(std::memcmp(out.getData(), expected, sizeof(expected)), 0);
+}
+
 }  // namespace FprimeGds
+

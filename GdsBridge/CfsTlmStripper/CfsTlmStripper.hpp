@@ -13,8 +13,9 @@ namespace FprimeGds {
 //! Size in bytes of the CCSDS space packet primary header
 constexpr FwSizeType CFS_TLM_STRIPPER_PRI_HDR_SIZE = 6;
 
-//! Size in bytes of the cFS telemetry secondary header (4-byte seconds, 2-byte subseconds)
-constexpr FwSizeType CFS_TLM_STRIPPER_SEC_HDR_SIZE = 6;
+//! Size in bytes of the cFS telemetry secondary header: 4-byte seconds, 2-byte subseconds, then the
+//! 4 spare bytes of CFE_MSG_TelemetryHeader_t (cFE pads the telemetry header to 16 bytes)
+constexpr FwSizeType CFS_TLM_STRIPPER_SEC_HDR_SIZE = 10;
 
 //! Secondary header flag mask within the high byte of the stream identifier
 constexpr U8 CFS_TLM_STRIPPER_SEC_HDR_FLAG = 0x08;

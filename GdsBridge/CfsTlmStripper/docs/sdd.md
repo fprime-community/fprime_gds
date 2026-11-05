@@ -1,6 +1,7 @@
 # FprimeGds::CfsTlmStripper
 
-A framer stage that strips the cFS telemetry secondary header (big-endian 4-byte seconds, 2-byte subseconds)
+A framer stage that strips the cFS telemetry secondary header (big-endian 4-byte seconds, 2-byte subseconds, then the 4 spare
+bytes of `CFE_MSG_TelemetryHeader_t`)
 from complete telemetry space packets, rebuilding the CCSDS primary header. It is the inverse of
 `FPrimeCfs.CfsTlmFramer`, intended for ground-facing bridges (e.g. a GDS bridge application) whose downstream
 consumers expect bare F Prime packets inside the space packets.
@@ -18,10 +19,10 @@ CfsTlmStripper.dataReturnOut -> FPrimeCfs.CfsBridge.dataReturnIn
 
 For each incoming buffer holding a complete space packet:
 
-- Telemetry packets (packet type bit clear) with the secondary header flag set have the 6-byte cFS telemetry
+- Telemetry packets (packet type bit clear) with the secondary header flag set have the 10-byte cFS telemetry
   secondary header removed **in place**: the primary header is rewritten into the 6 bytes immediately preceding
-  the payload (over the secondary header), the packet data length field shrinks by 6, the secondary header flag
-  is cleared, and the buffer's data pointer is advanced by 6 with the size reduced accordingly. No allocation
+  the payload (over the end of the secondary header), the packet data length field shrinks by 10, the secondary header flag
+  is cleared, and the buffer's data pointer is advanced by 10 with the size reduced accordingly. No allocation
   or payload copy is performed. The forwarded context has `hasSecHdr = false`.
 - All other packets (commands, packets without the secondary header flag) are forwarded unchanged.
 
@@ -42,7 +43,7 @@ the sender.
 
 | Requirement | Description | Verification Method |
 |---|---|---|
-| FPRIMEGDS-CFSTLMSTRIPPER-001 | CfsTlmStripper shall remove the 6-byte cFS telemetry secondary header from each telemetry space packet (packet type bit clear) received on `dataIn` whose secondary header flag is set, forwarding the stripped packet on `dataOut` with `hasSecHdr = false` in the context. | Unit test |
+| FPRIMEGDS-CFSTLMSTRIPPER-001 | CfsTlmStripper shall remove the 10-byte cFS telemetry secondary header (6-byte time plus the 4 spare bytes of `CFE_MSG_TelemetryHeader_t`) from each telemetry space packet (packet type bit clear) received on `dataIn` whose secondary header flag is set, forwarding the stripped packet on `dataOut` with `hasSecHdr = false` in the context. | Unit test |
 | FPRIMEGDS-CFSTLMSTRIPPER-002 | For stripped packets, CfsTlmStripper shall rebuild the CCSDS primary header such that the secondary header flag is cleared, the packet data length field is reduced by the secondary header size, and all other primary header fields are preserved. | Unit test |
 | FPRIMEGDS-CFSTLMSTRIPPER-003 | CfsTlmStripper shall strip packets in place, without allocating a new buffer or copying the packet payload, by advancing the buffer's data pointer past the removed header bytes. | Unit test |
 | FPRIMEGDS-CFSTLMSTRIPPER-004 | CfsTlmStripper shall forward command packets, and packets whose secondary header flag is clear, on `dataOut` unchanged. | Unit test |
